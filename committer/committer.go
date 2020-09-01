@@ -25,6 +25,12 @@ func NewCommitter(
 	}
 }
 
+const (
+	EntityTypeSingular = 0
+	EntityTypeSlice = 1
+	EntityTypeMap = 2
+)
+
 func (committer *CommitterInstance) Commit(height uint64, entities ...interface{}) error {
 	// create a write batch
 	var transaction = false
@@ -42,20 +48,38 @@ func (committer *CommitterInstance) Commit(height uint64, entities ...interface{
 		kvIndexEntries := kvIndex.GetEntries()
 
 		// creating indexes
-		// the entity might be of slice type - convert it to slice anyway for easier handling
+		// the entity might be of slice type - convert it to slice anyway for batch commit
 		entitiesInSlice := make([]interface{}, 0)
 
 		// in case of slice entity, the leading index path must be adjusted (* has to go)
 		// -- flag for that
-		isSliceEntity := false
-		if t.Kind() == reflect.Slice {
-			isSliceEntity = true
+		entityType := EntityTypeSingular
+
+		switch t.Kind() {
+		case reflect.Slice:
+			entityType = EntityTypeSlice
 			for i := 0; i < v.Len(); i++ {
-				entitiesInSlice = append(entitiesInSlice, v.Index(i).Interface())
+				entitiesInSlice[i] = v.Index(i).Interface()
 			}
-		} else {
-			entitiesInSlice = append(entitiesInSlice, rawEntity)
+		case reflect.Map:
+			// TODO: implement me!!
+			entityType = EntityTypeMap
+
+			idx := 0
+			for
+		default:
+			entityType = EntityTypeSingular
+			entitiesInSlice[0] = rawEntity
 		}
+
+		// if t.Kind() == reflect.Slice {
+		// 	isSliceEntity = true
+		// 	for i := 0; i < v.Len(); i++ {
+		// 		entitiesInSlice = append(entitiesInSlice, v.Index(i).Interface())
+		// 	}
+		// } else {
+		// 	entitiesInSlice = append(entitiesInSlice, rawEntity)
+		// }
 
 		seq, errSeq := committer.db.GetSequence([]byte(t.Name()), uint64(len(entitiesInSlice)))
 		if errSeq != nil {
@@ -115,7 +139,7 @@ func (committer *CommitterInstance) Commit(height uint64, entities ...interface{
 
 				// if isSliceEntity is true, then this entity is a slice entity
 				// the leading '*' must go away
-				if isSliceEntity {
+				if entityType == EntityTypeSlice {
 					valuePath = valuePath[1:]
 				}
 
