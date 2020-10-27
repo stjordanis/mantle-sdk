@@ -13,6 +13,7 @@ require (
 	github.com/go-openapi/swag v0.19.9
 	github.com/go-openapi/validate v0.19.10
 	github.com/golang/protobuf v1.4.2 // indirect
+	github.com/golang/snappy v0.0.2
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.2
 	github.com/graphql-go/graphql v0.7.9
@@ -26,8 +27,8 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/tendermint/tendermint v0.33.7
 	github.com/tendermint/tm-db v0.5.1
-	github.com/terra-project/core v0.4.0-rc.4
-	github.com/terra-project/mantle-compatibility v1.2.1-tequila-rc4
+	github.com/terra-project/core v0.4.0-rc.5
+	github.com/terra-project/mantle-compatibility v1.3.0-tequila-0004
 	github.com/vmihailenco/msgpack/v5 v5.0.0-beta.1
 	golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9 // indirect
 	golang.org/x/sys v0.0.0-20200610111108-226ff32320da // indirect
