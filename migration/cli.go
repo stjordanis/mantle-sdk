@@ -5,7 +5,6 @@ import (
 	tmdb "github.com/tendermint/tm-db"
 	"github.com/terra-project/mantle-sdk/db/badger"
 	"github.com/terra-project/mantle-sdk/migration/migrators"
-	"github.com/terra-project/mantle-sdk/utils"
 	"os"
 )
 
@@ -45,25 +44,25 @@ func main() {
 
 	// test
 	// application db
-	if sourcedb, err = tmdb.NewGoLevelDB("application", tendermintdb); err != nil {
-		panic(err)
-	}
-
-	key := utils.ConcatBytes([]byte("s/k:mint/"), []byte{0x00})
-	v, err := sourcedb.Get(key)
-	fmt.Println(v, err)
-	//
-	// it, _ := sourcedb.Iterator([]byte("s/k:mint/",), nil)
-	//
-	// for it.Valid() {
-	// 	if !strings.HasPrefix(string(it.Key()), "s/k:mint") {
-	// 		break
-	// 	}
-	// 	fmt.Println(it.Key(), string(it.Key()))
-	// 	return
+	// if sourcedb, err = tmdb.NewGoLevelDB("application", tendermintdb); err != nil {
+	// 	panic(err)
 	// }
-
-	return
+	//
+	// key := utils.ConcatBytes([]byte("s/k:mint/"), []byte{0x00})
+	// v, err := sourcedb.Get(key)
+	// fmt.Println(v, err)
+	// //
+	// // it, _ := sourcedb.Iterator([]byte("s/k:mint/",), nil)
+	// //
+	// // for it.Valid() {
+	// // 	if !strings.HasPrefix(string(it.Key()), "s/k:mint") {
+	// // 		break
+	// // 	}
+	// // 	fmt.Println(it.Key(), string(it.Key()))
+	// // 	return
+	// // }
+	//
+	// return
 
 	// statedb
 	if sourcedb, err = tmdb.NewGoLevelDB("state", tendermintdb); err != nil {
