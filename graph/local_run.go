@@ -6,7 +6,6 @@ import (
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
 	"github.com/graphql-go/graphql/language/source"
-	"github.com/terra-project/mantle-sdk/serdes"
 	"github.com/terra-project/mantle-sdk/types"
 	"sync"
 )
@@ -37,7 +36,7 @@ func InternalGQLRun(p graphql.Params) *types.GraphQLInternalResult {
 
 	fields := p.Schema.QueryType().Fields()
 	gqlRunResult := types.GraphQLInternalResult{
-		Data: make(map[string][]byte),
+		Data: make(map[string]interface{}),
 		Errors: nil,
 	}
 
@@ -60,8 +59,12 @@ func InternalGQLRun(p graphql.Params) *types.GraphQLInternalResult {
 
 			switch selection := selection.(type) {
 			case *ast.Field:
-				fieldName := selection.Name
-				fieldConfig := fields[fieldName.Value]
+				fieldName := selection.Name.Value
+				fieldConfig := fields[fieldName]
+
+				if selection.Alias != nil {
+					fieldName = selection.Alias.Value
+				}
 
 				var variables = make(map[string]interface{})
 
@@ -88,6 +91,8 @@ func InternalGQLRun(p graphql.Params) *types.GraphQLInternalResult {
 				}
 
 				// mutex control
+				// TODO: only do this when the underlying query is of LCD
+				// is this even possible?
 				sync.Lock()
 				defer sync.Unlock()
 
@@ -98,14 +103,16 @@ func InternalGQLRun(p graphql.Params) *types.GraphQLInternalResult {
 					return
 				}
 
-				pack, packErr := serdes.Serialize(nil, result)
-				if packErr != nil {
-					gqlRunResult.Errors = []error{err}
-					return
-				}
+				// pack, packErr := serdes.Serialize(nil, result)
+				// if packErr != nil {
+				// 	gqlRunResult.Errors = []error{err}
+				// 	return
+				// }
+
+				fmt.Println(fieldName, result)
 
 				// save
-				gqlRunResult.Data[fieldName.Value] = pack
+				gqlRunResult.Data[fieldName] = result
 				return
 
 			case *ast.FragmentDefinition:

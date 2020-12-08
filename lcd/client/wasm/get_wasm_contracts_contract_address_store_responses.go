@@ -11,7 +11,6 @@ import (
 
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/swag"
 )
 
 // GetWasmContractsContractAddressStoreReader is a Reader for the GetWasmContractsContractAddressStore structure.
@@ -44,60 +43,23 @@ func NewGetWasmContractsContractAddressStoreOK() *GetWasmContractsContractAddres
 OK
 */
 type GetWasmContractsContractAddressStoreOK struct {
-	Payload *GetWasmContractsContractAddressStoreOKBody
+	Payload string
 }
 
 func (o *GetWasmContractsContractAddressStoreOK) Error() string {
 	return fmt.Sprintf("[GET /wasm/contracts/{contractAddress}/store][%d] getWasmContractsContractAddressStoreOK  %+v", 200, o.Payload)
 }
 
-func (o *GetWasmContractsContractAddressStoreOK) GetPayload() *GetWasmContractsContractAddressStoreOKBody {
+func (o *GetWasmContractsContractAddressStoreOK) GetPayload() string {
 	return o.Payload
 }
 
 func (o *GetWasmContractsContractAddressStoreOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(GetWasmContractsContractAddressStoreOKBody)
-
 	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 
-	return nil
-}
-
-/*GetWasmContractsContractAddressStoreOKBody get wasm contracts contract address store o k body
-swagger:model GetWasmContractsContractAddressStoreOKBody
-*/
-type GetWasmContractsContractAddressStoreOKBody struct {
-
-	// height
-	Height string `json:"height,omitempty"`
-
-	// result
-	Result string `json:"result,omitempty"`
-}
-
-// Validate validates this get wasm contracts contract address store o k body
-func (o *GetWasmContractsContractAddressStoreOKBody) Validate(formats strfmt.Registry) error {
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (o *GetWasmContractsContractAddressStoreOKBody) MarshalBinary() ([]byte, error) {
-	if o == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(o)
-}
-
-// UnmarshalBinary interface implementation
-func (o *GetWasmContractsContractAddressStoreOKBody) UnmarshalBinary(b []byte) error {
-	var res GetWasmContractsContractAddressStoreOKBody
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*o = res
 	return nil
 }

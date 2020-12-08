@@ -1,21 +1,31 @@
 package graph
 
 import (
+	"fmt"
 	"github.com/terra-project/mantle-sdk/serdes"
 	"github.com/terra-project/mantle-sdk/types"
 	"reflect"
 	"sync"
 )
 
+// TODO: optimize this bit, this is mad inefficient
 func UnmarshalInternalQueryResult(result *types.GraphQLInternalResult, target interface{}) error {
 	targetValue := reflect.Indirect(reflect.ValueOf(target))
 
-	for key, packBytes := range result.Data {
+	for key, data := range result.Data {
 		targetField := targetValue.FieldByName(key)
+		if !targetField.IsValid() {
+			return fmt.Errorf("invalid target %s", key)
+		}
+
 		targetCache := reflect.New(targetField.Type())
 
-		if unpackErr := serdes.Deserialize(targetField.Type(), packBytes, targetCache.Interface()); unpackErr != nil {
-			return unpackErr
+		pack, _ := serdes.Serialize(targetField.Type(), data)
+		err := serdes.Deserialize(targetField.Type(), pack, targetCache.Interface())
+
+		if err != nil {
+			fmt.Println("????", err, targetCache, data)
+			continue
 		}
 
 		targetField.Set(targetCache.Elem())
@@ -23,31 +33,6 @@ func UnmarshalInternalQueryResult(result *types.GraphQLInternalResult, target in
 
 	return nil
 }
-
-type Thunk func() (interface{}, error)
-type ThunkResult struct {
-	data interface{}
-	err error
-}
-func CreateThunk(thunk Thunk) (func() (interface{}, error), error) {
-	ch := make(chan *ThunkResult, 1)
-
-	go func() {
-		defer close(ch)
-		res, err := thunk()
-		if err != nil {
-			ch <- &ThunkResult{data: nil, err: err}
-		} else {
-			ch <- &ThunkResult{data: res, err: nil}
-		}
-	}()
-
-	return func() (interface{}, error) {
-		r := <-ch
-		return r.data, r.err
-	}, nil
-}
-
 
 func CreateParallel(len int) *parallelExecutionContext {
 	wg := &sync.WaitGroup{}

@@ -87,8 +87,10 @@ func createIsolatedQuerier(
 			}
 
 			return fmt.Errorf(
-				"graphql query resulted in errors: %s",
+				"graphql query resulted in errors: %s.\n\tquery=%s,\n\tvariables=%v",
 				strings.Join(errorsString, " "),
+				qs,
+				variables,
 			)
 		}
 

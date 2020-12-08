@@ -14,7 +14,7 @@ type GraphQLResult interface {
 }
 
 type GraphQLInternalResult struct {
-	Data   map[string][]byte
+	Data   map[string]interface{}
 	Errors []error
 }
 

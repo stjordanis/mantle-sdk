@@ -16,6 +16,7 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/graphql-go/graphql v0.7.9
 	github.com/graphql-go/handler v0.2.3
+	github.com/jinzhu/copier v0.1.0 // indirect
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/pelletier/go-toml v1.8.0 // indirect
@@ -28,6 +29,7 @@ require (
 	github.com/tendermint/tm-db v0.5.2
 	github.com/terra-project/core v0.4.1
 	github.com/terra-project/mantle-compatibility v1.6.0-columbus-4
+	github.com/ulule/deepcopier v0.0.0-20200430083143-45decc6639b6 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.0.0-beta.1
 	golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9 // indirect
 	golang.org/x/sys v0.0.0-20200610111108-226ff32320da // indirect
