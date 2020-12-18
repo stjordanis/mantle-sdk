@@ -111,8 +111,9 @@ func GenerateListGraphResolver(modelType reflect.Type, fieldConfig *graphql.Fiel
 					intersectionSets = append(intersectionSets, keysHashMap)
 				}
 
+				// run ranged args first
 				// run them in thunk
-				pctx := graph.CreateParallel(len(filteredArgs))
+				pctx := graph.CreateParallel(len(FilterRangedArgs(filteredArgs)))
 
 				for indexKey, indexParam := range filteredArgs {
 					k := indexKey
@@ -140,28 +141,6 @@ func GenerateListGraphResolver(modelType reflect.Type, fieldConfig *graphql.Fiel
 
 						return keysHashMap, nil
 					})
-					//
-					// queryResolver, err := q.Build(entityName, indexKey, indexParam)
-					// if err != nil {
-					// 	return nil, err
-					// }
-					//
-					// it, err := queryResolver.Resolve()
-					// if err != nil {
-					// 	return nil, err
-					// }
-					//
-					// // for every key found, mark them found
-					// keysHashMap := make(map[string]bool)
-					//
-					// for it.Valid() {
-					// 	keysHashMap[string(it.Key())] = true
-					// 	it.Next()
-					// }
-					//
-					// it.Close()
-					//
-					// intersectionSets = append(intersectionSets, keysHashMap)
 				}
 
 				intersectionSetResults := pctx.Sync()
@@ -196,6 +175,8 @@ func GenerateListGraphResolver(modelType reflect.Type, fieldConfig *graphql.Fiel
 
 					intersection = nextIntersection
 				}
+
+				// seek
 
 				// order intersection
 				var sortedIntersection = make([]string, len(intersection))
