@@ -26,7 +26,6 @@ func UnmarshalInternalQueryResult(result *types.GraphQLInternalResult, target in
 		}
 
 		targetField.Set(targetCache.Elem())
-
 	}
 
 	return nil
@@ -36,25 +35,6 @@ type Thunk func() (interface{}, error)
 type ThunkResult struct {
 	data interface{}
 	err  error
-}
-
-func CreateThunk(thunk Thunk) (func() (interface{}, error), error) {
-	ch := make(chan *ThunkResult, 1)
-
-	go func() {
-		defer close(ch)
-		res, err := thunk()
-		if err != nil {
-			ch <- &ThunkResult{data: nil, err: err}
-		} else {
-			ch <- &ThunkResult{data: res, err: nil}
-		}
-	}()
-
-	return func() (interface{}, error) {
-		r := <-ch
-		return r.data, r.err
-	}, nil
 }
 
 func CreateParallel(len int) *parallelExecutionContext {

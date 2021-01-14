@@ -74,7 +74,7 @@ func (server *GraphQLInstance) QueryInternal(
 	variables types.GraphQLParams,
 	dependencies []types.Model,
 ) types.GraphQLResult {
-	//log.Printf("[graphql] Query\tq=%s,v=%v", gqlQuery, variables)
+	log.Printf("[graphql] Query\tq=%s,v=%v", gqlQuery, variables)
 	params := graphql.Params{
 		Schema:         server.schema,
 		RequestString:  gqlQuery,
@@ -84,6 +84,14 @@ func (server *GraphQLInstance) QueryInternal(
 
 	// unresolved dependency are to be handled in resolver functions
 	return InternalGQLRun(params)
+}
+
+func (server *GraphQLInstance) QueryRemote(
+	gqlQuery string,
+	variables types.GraphQLParams,
+	dependencies []types.Model,
+) {
+	return
 }
 
 // Commit persists indexer outputs in memory.
