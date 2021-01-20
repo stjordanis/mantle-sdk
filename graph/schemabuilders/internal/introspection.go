@@ -47,12 +47,12 @@ type Input struct {
 }
 
 type Field struct {
-	Args              []Argument  `json:"args"`
-	DeprecationReason interface{} `json:"deprecationReason"`
-	Description       string      `json:"description"`
-	IsDeprecated      bool        `json:"isDeprecated"`
-	Name              string      `json:"name"`
-	Type              Type        `json:"type"`
+	Args              []Argument `json:"args"`
+	DeprecationReason string     `json:"deprecationReason"`
+	Description       string     `json:"description"`
+	IsDeprecated      bool       `json:"isDeprecated"`
+	Name              string     `json:"name"`
+	Type              Type       `json:"type"`
 }
 type EnumValue struct {
 	DeprecationReason string `json:"deprecationReason"`

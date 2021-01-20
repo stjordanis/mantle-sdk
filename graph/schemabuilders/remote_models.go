@@ -9,7 +9,6 @@ import (
 
 type (
 	RemoteQueriesMap map[string]TypeDescriptor
-	ResolverCreator  func(name string) graphql.FieldResolveFn
 	SubGraphRecFunc  func(nodeName string)
 )
 
@@ -27,24 +26,21 @@ func CreateRemoteModelSchemaBuilder(remoteMantleEndpoint string) graph.SchemaBui
 			return fmt.Errorf("remote mantle does not have root query")
 		}
 
-		reconstructQuery(
-			rootQuery,
-			fields,
-			remoteModelsMap,
-			func(name string) graphql.FieldResolveFn {
-				return func(p graphql.ResolveParams) (interface{}, error) {
+		rootQueryFields := rootQuery.Fields
 
-					// if root, pass down a function which has
+		// iterate over queriable field, reconstruct query
+		for _, queriableField := range rootQueryFields {
+			name := queriableField.Name
+			queryType := queriableField.Type
 
-					// else
-					return func() {
+			// query output object
+			fieldConfig := reconstructFieldConfig(
+				queryType,
+				remoteModelsMap,
+			)
 
-						sgrf, isRoot := p.Source.(SubGraphRecFunc)
-
-					}, nil
-				}
-			},
-		)
+			(*fields)[name] = fieldConfig
+		}
 
 		return nil
 	}
@@ -60,58 +56,50 @@ func convertTypesToTypeMap(types []TypeDescriptor) RemoteQueriesMap {
 	return m
 }
 
-// reconstructQuery builds remote schemas available in RootQuery
-func reconstructQuery(
-	td TypeDescriptor,
-	targetFields *graphql.Fields,
-	rqm RemoteQueriesMap,
-	resolverCreator func(name string) graphql.FieldResolveFn,
-) {
-	var fields = graphql.Fields{}
-	for _, f := range td.Fields {
-		fields[f.Name] = &graphql.Field{
-			Name:              f.Name,
-			Type:              reconstructField(f),
-			Args:              reconstructFieldArgs(f),
-			Resolve:           nil,
-			DeprecationReason: "",
-			Description:       "",
-		}
-	}
-
-	query := &graphql.Field{
-		Name:              td.Name,
-		Type:              nil,
-		Args:              nil,
-		Resolve:           nil,
-		DeprecationReason: "",
-		Description:       td.Description,
-	}
-
-}
-
-func reconstructField(
-	f Field,
+func reconstructFieldConfig(
+	queryType Type,
+	remoteQueriesMap RemoteQueriesMap,
 ) graphql.Output {
-
-}
-
-func reconstructFieldArgs(
-	f Field,
-) graphql.FieldConfigArgument {
-	argumentConfig := graphql.FieldConfigArgument{}
-	for _, arg := range f.Args {
-
-		argumentConfig[arg.Name] = &graphql.ArgumentConfig{
-			Type:         ,
-			DefaultValue: arg.DefaultValue,
-			Description:  arg.Description,
+	switch queryType.Kind {
+	case "OBJECT":
+		outputTypeName, ok := queryType.Name.(string)
+		if !ok {
+			panic(fmt.Errorf("output type name is not string; trying to reconstructFieldConfig %v", queryType))
 		}
-	}
-}
+		definition, ok := remoteQueriesMap[outputTypeName]
+		if !ok {
+			panic(fmt.Errorf("schema definition %s does not exist", outputTypeName))
+		}
 
-func reconstructType(
-	t Type,
-) {
-	t.
+		subselectionFields := graphql.Fields{}
+
+		subSelections := definition.Fields
+		for _, selection := range subSelections {
+			selectionName := selection.Name
+			selectionType := reconstructFieldConfig(
+				selection.Type,
+				remoteQueriesMap,
+			)
+
+			subselectionFields[selectionName] = &graphql.Field{
+				Name:              selectionName,
+				Type:              selectionType,
+				Args:              nil,
+				Resolve:           nil,
+				DeprecationReason: selection.DeprecationReason,
+				Description:       selection.Description,
+			}
+		}
+
+		return graphql.NewObject(graphql.ObjectConfig{
+			Name:        outputTypeName,
+			Fields:      subselectionFields,
+			Description: definition.Description,
+		})
+
+	case "LIST":
+
+	default:
+
+	}
 }
