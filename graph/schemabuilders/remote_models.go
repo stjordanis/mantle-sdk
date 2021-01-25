@@ -1,10 +1,13 @@
 package schemabuilders
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/graphql-go/graphql"
 	"github.com/terra-project/mantle-sdk/graph"
 	. "github.com/terra-project/mantle-sdk/graph/schemabuilders/internal"
+	"io/ioutil"
+	"net/http"
 )
 
 type (
@@ -27,6 +30,7 @@ func CreateRemoteModelSchemaBuilder(remoteMantleEndpoint string) graph.SchemaBui
 		}
 
 		rootQueryFields := rootQuery.Fields
+		rootProxyResolverContext := NewProxyResolverContext()
 
 		// iterate over queriable field, reconstruct query
 		for _, queriableField := range rootQueryFields {
@@ -37,6 +41,8 @@ func CreateRemoteModelSchemaBuilder(remoteMantleEndpoint string) graph.SchemaBui
 			fieldConfig := reconstructFieldConfig(
 				queryType,
 				remoteModelsMap,
+				rootProxyResolverContext,
+				true,
 			)
 
 			(*fields)[name] = fieldConfig
@@ -59,6 +65,7 @@ func convertTypesToTypeMap(types []TypeDescriptor) RemoteQueriesMap {
 func reconstructFieldConfig(
 	queryType Type,
 	remoteQueriesMap RemoteQueriesMap,
+	isRoot bool,
 ) graphql.Output {
 	switch queryType.Kind {
 	case "OBJECT":
@@ -79,13 +86,44 @@ func reconstructFieldConfig(
 			selectionType := reconstructFieldConfig(
 				selection.Type,
 				remoteQueriesMap,
+				false,
 			)
 
 			subselectionFields[selectionName] = &graphql.Field{
-				Name:              selectionName,
-				Type:              selectionType,
-				Args:              nil,
-				Resolve:           nil,
+				Name: selectionName,
+				Type: selectionType,
+				Args: nil,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if isRoot {
+
+					}
+
+					prc, ok := p.Source.(*ProxyResolverResponseCallback)
+					if !ok {
+						panic(fmt.Errorf("subselection %s source is not a proxy resolver context", selectionName))
+					}
+
+					cprc.AssignArguments(p.Args)
+
+					if isRoot {
+						rootQuery := ReconstructRootQuery(bytes.Buffer{}, cprc)
+
+						// somehow make query
+						response, err := http.Get("https://tequila-mantle.terra.dev", rootQuery.String())
+						if err != nil {
+							return nil, err
+						}
+
+						responseBuf, err := ioutil.ReadAll(response.Body)
+						cprc.SetResponse(string(responseBuf), err)
+
+						cprc.SetResponse()
+					}
+
+					return func() (interface{}, error) {
+						return cprc.Resolve()
+					}, nil
+				},
 				DeprecationReason: selection.DeprecationReason,
 				Description:       selection.Description,
 			}
