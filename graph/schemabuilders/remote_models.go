@@ -15,6 +15,11 @@ type (
 	SubGraphRecFunc  func(nodeName string)
 )
 
+var (
+	errInvalidContext = fmt.Errorf("context is not proxy resolver context")
+	errInvalidSource  = fmt.Errorf("source is not proxy resolver context")
+)
+
 func CreateRemoteModelSchemaBuilder(remoteMantleEndpoint string) graph.SchemaBuilder {
 	return func(fields *graphql.Fields) error {
 		schema := NewIntrospection(remoteMantleEndpoint)
@@ -94,9 +99,21 @@ func reconstructFieldConfig(
 				Type: selectionType,
 				Args: nil,
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					// have a reference to ProxyResolver, depending on the tree order
+					var prc *ProxyResolverContext
 					if isRoot {
-
+						prc, ok = p.Context.Value(ProxyResolverContextKey).(*ProxyResolverContext)
+						if !ok {
+							panic(errInvalidContext)
+						}
+					} else {
+						prc, ok = p.Source.(*ProxyResolverContext)
+						if !ok {
+							panic(errInvalidSource)
+						}
 					}
+
+					//
 
 					prc, ok := p.Source.(*ProxyResolverResponseCallback)
 					if !ok {
