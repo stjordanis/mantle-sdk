@@ -135,7 +135,7 @@ func NewGetBlocksHeightInternalServerError() *GetBlocksHeightInternalServerError
 
 /*GetBlocksHeightInternalServerError handles this case with default header values.
 
-Server internal error
+Server proxy_resolver error
 */
 type GetBlocksHeightInternalServerError struct {
 }

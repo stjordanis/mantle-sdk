@@ -84,7 +84,7 @@ func NewGetValidatorsetsLatestInternalServerError() *GetValidatorsetsLatestInter
 
 /*GetValidatorsetsLatestInternalServerError handles this case with default header values.
 
-Server internal error
+Server proxy_resolver error
 */
 type GetValidatorsetsLatestInternalServerError struct {
 }

@@ -2,10 +2,11 @@ package schemabuilders
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/graphql-go/graphql"
 	"github.com/terra-project/mantle-sdk/graph"
-	. "github.com/terra-project/mantle-sdk/graph/schemabuilders/internal"
+	. "github.com/terra-project/mantle-sdk/graph/schemabuilders/proxy_resolver"
 	"io/ioutil"
 	"net/http"
 )
@@ -35,7 +36,24 @@ func CreateRemoteModelSchemaBuilder(remoteMantleEndpoint string) graph.SchemaBui
 		}
 
 		rootQueryFields := rootQuery.Fields
-		rootProxyResolverContext := NewProxyResolverContext()
+
+		// create rootProxyResolverContext
+		// once query building is done, the callback will relay the graphql query
+		// back tothe base mantle (to remoteMantleEndpoint)
+		rootProxyResolverContext := NewProxyResolverContext(func(query []byte) map[string]interface{} {
+			response := graph.CreateRemoteMantleRequest(remoteMantleEndpoint, query)
+
+			gqlResponse := new(struct {
+				Data map[string]interface{} `json:"data"`
+			})
+
+			err := json.Unmarshal(response, gqlResponse)
+			if err != nil {
+				panic(err)
+			}
+
+			return gqlResponse.Data
+		})
 
 		// iterate over queriable field, reconstruct query
 		for _, queriableField := range rootQueryFields {
@@ -43,14 +61,24 @@ func CreateRemoteModelSchemaBuilder(remoteMantleEndpoint string) graph.SchemaBui
 			queryType := queriableField.Type
 
 			// query output object
-			fieldConfig := reconstructFieldConfig(
+			fieldOutput := reconstructFieldConfig(
 				queryType,
 				remoteModelsMap,
-				rootProxyResolverContext,
-				true,
 			)
 
-			(*fields)[name] = fieldConfig
+			fieldArguments := reconstr
+
+			//
+			(*fields)[name] = &graphql.Field{
+				Name: name,
+				Type: fieldOutput,
+				Args: nil,
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					return rootProxyResolverContext.CreateSubtree(name, p.Args), nil
+				},
+				DeprecationReason: "",
+				Description:       "",
+			}
 		}
 
 		return nil
@@ -70,7 +98,6 @@ func convertTypesToTypeMap(types []TypeDescriptor) RemoteQueriesMap {
 func reconstructFieldConfig(
 	queryType Type,
 	remoteQueriesMap RemoteQueriesMap,
-	isRoot bool,
 ) graphql.Output {
 	switch queryType.Kind {
 	case "OBJECT":
@@ -91,8 +118,8 @@ func reconstructFieldConfig(
 			selectionType := reconstructFieldConfig(
 				selection.Type,
 				remoteQueriesMap,
-				false,
 			)
+			_, isScalarType := selectionType.(*graphql.Scalar)
 
 			subselectionFields[selectionName] = &graphql.Field{
 				Name: selectionName,
@@ -101,45 +128,17 @@ func reconstructFieldConfig(
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					// have a reference to ProxyResolver, depending on the tree order
 					var prc *ProxyResolverContext
-					if isRoot {
-						prc, ok = p.Context.Value(ProxyResolverContextKey).(*ProxyResolverContext)
-						if !ok {
-							panic(errInvalidContext)
-						}
-					} else {
-						prc, ok = p.Source.(*ProxyResolverContext)
-						if !ok {
-							panic(errInvalidSource)
-						}
-					}
-
-					//
-
-					prc, ok := p.Source.(*ProxyResolverResponseCallback)
+					prc, ok := p.Source.(*ProxyResolverContext)
 					if !ok {
-						panic(fmt.Errorf("subselection %s source is not a proxy resolver context", selectionName))
+						return nil, errInvalidSource
 					}
 
-					cprc.AssignArguments(p.Args)
-
-					if isRoot {
-						rootQuery := ReconstructRootQuery(bytes.Buffer{}, cprc)
-
-						// somehow make query
-						response, err := http.Get("https://tequila-mantle.terra.dev", rootQuery.String())
-						if err != nil {
-							return nil, err
-						}
-
-						responseBuf, err := ioutil.ReadAll(response.Body)
-						cprc.SetResponse(string(responseBuf), err)
-
-						cprc.SetResponse()
+					var isLeafNode = isScalarType
+					if isLeafNode {
+						return prc.Resolve()
+					} else {
+						return prc.CreateSubtree(selectionName, p.Args), nil
 					}
-
-					return func() (interface{}, error) {
-						return cprc.Resolve()
-					}, nil
 				},
 				DeprecationReason: selection.DeprecationReason,
 				Description:       selection.Description,
@@ -157,4 +156,11 @@ func reconstructFieldConfig(
 	default:
 
 	}
+}
+
+func reconstructFieldArgument(
+	queryType Type,
+	remoteQueriesMap RemoteQueriesMap,
+) graphql.Input {
+
 }

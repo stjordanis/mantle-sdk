@@ -80,7 +80,7 @@ func NewGetSyncingInternalServerError() *GetSyncingInternalServerError {
 
 /*GetSyncingInternalServerError handles this case with default header values.
 
-Server internal error
+Server proxy_resolver error
 */
 type GetSyncingInternalServerError struct {
 }

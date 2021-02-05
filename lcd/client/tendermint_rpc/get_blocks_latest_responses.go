@@ -81,7 +81,7 @@ func NewGetBlocksLatestInternalServerError() *GetBlocksLatestInternalServerError
 
 /*GetBlocksLatestInternalServerError handles this case with default header values.
 
-Server internal error
+Server proxy_resolver error
 */
 type GetBlocksLatestInternalServerError struct {
 }

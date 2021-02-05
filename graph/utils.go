@@ -1,9 +1,13 @@
 package graph
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/terra-project/mantle-sdk/serdes"
 	"github.com/terra-project/mantle-sdk/types"
+	"io/ioutil"
+	"net/http"
 	"reflect"
 	"sync"
 )
@@ -100,4 +104,19 @@ func (pec *parallelExecutionContext) Sync() []ParallelExecutionResult {
 	pec.wg.Wait()
 
 	return pec.result
+}
+
+func CreateRemoteMantleRequest(mantleEndpoint string, graphqlQuery []byte) []byte {
+	res, err := http.Post(mantleEndpoint, "application/json", bytes.NewBuffer(graphqlQuery))
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(res)
+
+	gqlResponse, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	return gqlResponse
 }

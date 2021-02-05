@@ -1,4 +1,4 @@
-package internal
+package proxy_resolver
 
 import (
 	"context"
