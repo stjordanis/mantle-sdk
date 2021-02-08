@@ -58,26 +58,28 @@ func CreateRemoteModelSchemaBuilder(remoteMantleEndpoint string) graph.SchemaBui
 		// iterate over queriable field, reconstruct query
 		for _, queriableField := range rootQueryFields {
 			name := queriableField.Name
-			queryType := queriableField.Type
 
 			// query output object
 			fieldOutput := reconstructFieldConfig(
-				queryType,
+				queriableField.Type,
 				remoteModelsMap,
 			)
 
-			fieldArguments := reconstr
+			fieldArguments := reconstructFieldArgument(
+				queriableField.Args,
+				remoteModelsMap,
+			)
 
 			//
 			(*fields)[name] = &graphql.Field{
 				Name: name,
 				Type: fieldOutput,
-				Args: nil,
+				Args: fieldArguments,
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					return rootProxyResolverContext.CreateSubtree(name, p.Args), nil
 				},
-				DeprecationReason: "",
-				Description:       "",
+				DeprecationReason: fmt.Sprintf("(proxy) %s", queriableField.DeprecationReason),
+				Description:       fmt.Sprintf("(proxy) %s", queriableField.Description),
 			}
 		}
 
@@ -159,8 +161,14 @@ func reconstructFieldConfig(
 }
 
 func reconstructFieldArgument(
-	queryType Type,
+	queryArguments []Argument,
 	remoteQueriesMap RemoteQueriesMap,
-) graphql.Input {
+) graphql.FieldConfigArgument {
+	argumentConfig := graphql.FieldConfigArgument{}
 
+	for _, queryArgument := range queryArguments {
+
+	}
+
+	return argumentConfig
 }
