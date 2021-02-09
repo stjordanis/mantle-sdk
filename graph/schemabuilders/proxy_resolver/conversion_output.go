@@ -6,11 +6,7 @@ import (
 	"github.com/terra-project/mantle-sdk/graph/generate"
 )
 
-type (
-	Definitions map[string]TypeDescriptor
-)
-
-func GetArgumentGraphQLType(argType *Input, definitions Definitions) graphql.Input {
+func GetGraphQLOutputType(argType *Input, definitions Definitions) graphql.Input {
 	underlyingType, ok := definitions[argType.Name]
 
 	if !ok {
@@ -21,6 +17,7 @@ func GetArgumentGraphQLType(argType *Input, definitions Definitions) graphql.Inp
 	// graphql-native scalars + custom scalars
 	case "SCALAR":
 		switch underlyingType.Name {
+		// take care of all graphql-native scalars
 		case "Int":
 			return graphql.Int
 		case "Float":
@@ -33,11 +30,13 @@ func GetArgumentGraphQLType(argType *Input, definitions Definitions) graphql.Inp
 			return graphql.ID
 		case "DateTime":
 			return graphql.DateTime
+		// check cosmos-scalar map
 		default:
-			// check cosmos-scalar map
 			cosmosScalar := generate.GetCosmosScalarByName(underlyingType.Name)
+
+			// if name is unknown, mantle can't handle it. panic here
 			if cosmosScalar == nil {
-				panic(fmt.Errorf("custom scalar %s not found", underlyingType.Name))
+				panic(errUnknownCustomScalar(underlyingType.Name))
 			}
 
 			return cosmosScalar
@@ -45,10 +44,15 @@ func GetArgumentGraphQLType(argType *Input, definitions Definitions) graphql.Inp
 
 	// get the matching OBJECT type of definitions, reconstruct them into graphql type
 	case "OBJECT":
+		panic(fmt.Errorf("object argument is not supported yet"))
 
 	case "LIST":
+		ofType := argType.OfType
+		underlyingType := GetGraphQLOutputType(ofType, definitions)
+		return graphql.NewList(underlyingType)
 
+	// unknown type, panic
 	default:
-
+		panic(errUnknownArgumentType(argType.Name))
 	}
 }
